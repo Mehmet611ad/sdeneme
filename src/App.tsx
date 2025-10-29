@@ -16,7 +16,7 @@ interface Heart {
 function App() {
   const [answered, setAnswered] = useState<'yes' | 'no' | null>(null);
   const [showMessage, setShowMessage] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);  // Start with muted to allow autoplay
+  const [isMuted, setIsMuted] = useState(false);  // Start with sound on
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const heartsRef = useRef<Heart[]>([]);
@@ -164,20 +164,25 @@ function App() {
     audioRef.current.volume = 0.3;
     
     // Start playing automatically when the page loads
-    const playPromise = audioRef.current.play().catch(error => {
-      console.log('Autoplay prevented:', error);
-      // If autoplay is prevented, try again with a user interaction
-      const handleUserInteraction = () => {
-        audioRef.current?.play().then(() => {
-          setIsMuted(false);
+    const playAudio = async () => {
+      try {
+        await audioRef.current?.play();
+      } catch (error) {
+        console.log('Autoplay prevented, waiting for interaction');
+        const handleUserInteraction = () => {
+          audioRef.current?.play()
+            .then(() => setIsMuted(false))
+            .catch(e => console.log('Playback failed:', e));
           document.removeEventListener('click', handleUserInteraction);
           document.removeEventListener('touchstart', handleUserInteraction);
-        });
-      };
-      
-      document.addEventListener('click', handleUserInteraction, { once: true });
-      document.addEventListener('touchstart', handleUserInteraction, { once: true });
-    });
+        };
+        
+        document.addEventListener('click', handleUserInteraction, { once: true });
+        document.addEventListener('touchstart', handleUserInteraction, { once: true });
+      }
+    };
+    
+    playAudio();
 
     return () => {
       window.removeEventListener('resize', handleResize);
