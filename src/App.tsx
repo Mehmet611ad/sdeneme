@@ -136,6 +136,9 @@ function App() {
       if (audio.src !== window.location.origin + src) {
         audio.src = src;
       }
+      // Ensure the browser fetches buffers immediately before play
+      audio.preload = 'auto';
+      try { audio.load(); } catch {}
       audio.muted = false;
       audio.currentTime = 0;
       audio.play().catch(() => {});
@@ -183,6 +186,21 @@ function App() {
       if (audioEl) {
         audioEl.pause();
       }
+    };
+  }, []);
+
+  // Preload both tracks early so they start faster on first click
+  useEffect(() => {
+    const a1 = new Audio('/sarki1.mp3');
+    a1.preload = 'auto';
+    try { a1.load(); } catch {}
+    const a2 = new Audio('/sarki2.mp3');
+    a2.preload = 'auto';
+    try { a2.load(); } catch {}
+    return () => {
+      // Help GC
+      a1.src = '';
+      a2.src = '';
     };
   }, []);
 
