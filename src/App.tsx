@@ -205,7 +205,15 @@ function App() {
     }
   };
 
-  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const isMobileDevice = /Mobi|Android/i.test(navigator.userAgent);
+
+  // Set reduced motion for mobile devices
+  useEffect(() => {
+    setPrefersReducedMotion(
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches || isMobileDevice
+    );
+  }, [isMobileDevice]);
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-gradient-to-br from-[#1a1a2e] via-[#2d3748] to-[#1a1a2e]">
@@ -258,7 +266,9 @@ function App() {
                   fontWeight: 300,
                   textShadow: '0 0 40px rgba(255, 255, 255, 0.3), 0 4px 20px rgba(0, 0, 0, 0.8)',
                   letterSpacing: '0.02em',
-                  animation: prefersReducedMotion ? 'none' : 'fadeInScale 1.5s cubic-bezier(0.4, 0, 0.2, 1)',
+                  opacity: prefersReducedMotion ? 1 : 0,
+                  animation: prefersReducedMotion ? 'none' : 'fadeInScale 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards',
+                  willChange: 'opacity, transform'
                 }}
               >
                 Beni seviyor musun?
@@ -310,7 +320,10 @@ function App() {
                 fontWeight: 400,
                 textShadow: '0 0 40px rgba(255, 255, 255, 0.3), 0 4px 20px rgba(0, 0, 0, 0.8)',
                 letterSpacing: '0.02em',
-                animation: showMessage && !prefersReducedMotion ? 'gentleFadeIn 2.5s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both' : 'none',
+                opacity: showMessage ? (prefersReducedMotion ? 1 : 0) : 0,
+                animation: showMessage && !prefersReducedMotion ? 'gentleFadeIn 2.5s cubic-bezier(0.4, 0, 0.2, 1) 0.3s forwards' : 'none',
+                willChange: 'opacity, transform',
+                transform: showMessage && prefersReducedMotion ? 'none' : 'translateY(20px)'
               }}
             >
               <span className="relative">
