@@ -296,7 +296,7 @@ function App() {
                 animation: showMessage && !prefersReducedMotion ? 'gentleFadeIn 2.5s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both' : 'none',
               }}
             >
-              {answered === 'yes' ? 'Ben de seni çok seviyorum' : 'Oysa ben seni çok seviyordum'}
+              {answered === 'yes' ? 'Ben de seni çok seviyorum' : 'Oysa ben seni çok seviyordum 😢'}
             </h2>
             {answered === 'yes' && (
               <p 
