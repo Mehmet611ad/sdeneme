@@ -15,7 +15,7 @@ interface Heart {
 function App() {
   const [answered, setAnswered] = useState<'yes' | 'no' | null>(null);
   const [showMessage, setShowMessage] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);  // Start muted to allow autoplay on mobile
+  // Audio is controlled only by user clicks (Evet/Hayır/Tekrar)
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const heartsRef = useRef<Heart[]>([]);
@@ -129,6 +129,17 @@ function App() {
 
   const handleAnswer = (answer: 'yes' | 'no') => {
     setAnswered(answer);
+    const audio = audioRef.current;
+    if (audio) {
+      // Choose track based on answer
+      const src = answer === 'yes' ? '/sarki1.mp3' : '/sarki2.mp3';
+      if (audio.src !== window.location.origin + src) {
+        audio.src = src;
+      }
+      audio.muted = false;
+      audio.currentTime = 0;
+      audio.play().catch(() => {});
+    }
     setTimeout(() => {
       setShowMessage(true);
     }, 1200);
@@ -137,6 +148,14 @@ function App() {
   const handleRetry = () => {
     setAnswered(null);
     setShowMessage(false);
+    // Stop any playing music when returning to main view
+    const audio = audioRef.current;
+    if (audio) {
+      try {
+        audio.pause();
+        audio.currentTime = 0;
+      } catch {}
+    }
   };
 
   const handleShare = () => {
@@ -157,71 +176,6 @@ function App() {
     };
 
     window.addEventListener('resize', handleResize);
-
-    const audio = audioRef.current;
-    if (audio) {
-      audio.loop = true;
-      audio.volume = 0.3;
-      audio.muted = true; // guarantee muted autoplay
-      // Start autoplay muted immediately
-      audio.play().catch(() => {});
-      setIsMuted(true);
-
-      // Keep trying to start playback until it actually starts (some browsers delay policies)
-      let ensurePlayingInterval: number | undefined;
-      const tryEnsurePlaying = () => {
-        if (audio.paused) {
-          audio.play().catch(() => {});
-        } else if (ensurePlayingInterval) {
-          window.clearInterval(ensurePlayingInterval);
-          ensurePlayingInterval = undefined;
-        }
-      };
-      ensurePlayingInterval = window.setInterval(tryEnsurePlaying, 1500);
-
-      const onVisibility = () => {
-        if (document.visibilityState === 'visible' && audio.paused) {
-          audio.play().catch(() => {});
-        }
-      };
-      document.addEventListener('visibilitychange', onVisibility);
-
-      // Unmute on ANY interaction (not sadece üstteki buton):
-      const attemptUnmute = () => {
-        if (audio.muted) {
-          audio.muted = false;
-          audio.play().then(() => setIsMuted(false)).catch(() => {});
-        }
-        removeInteractionListeners();
-      };
-
-      const removeInteractionListeners = () => {
-        document.removeEventListener('click', attemptUnmute);
-        document.removeEventListener('touchstart', attemptUnmute);
-        document.removeEventListener('pointerdown', attemptUnmute);
-        document.removeEventListener('keydown', attemptUnmute);
-        document.removeEventListener('scroll', attemptUnmute);
-        document.removeEventListener('mousemove', attemptUnmute);
-        window.removeEventListener('focus', attemptUnmute);
-        document.removeEventListener('visibilitychange', attemptUnmute);
-      };
-
-      document.addEventListener('click', attemptUnmute, { once: true });
-      document.addEventListener('touchstart', attemptUnmute, { once: true });
-      document.addEventListener('pointerdown', attemptUnmute, { once: true });
-      document.addEventListener('keydown', attemptUnmute, { once: true });
-      document.addEventListener('scroll', attemptUnmute, { once: true });
-      document.addEventListener('mousemove', attemptUnmute, { once: true });
-      window.addEventListener('focus', attemptUnmute, { once: true });
-      document.addEventListener('visibilitychange', attemptUnmute, { once: true });
-
-      // Cleanup interaction listeners on unmount
-      return () => {
-        removeInteractionListeners();
-        if (ensurePlayingInterval) window.clearInterval(ensurePlayingInterval);
-        document.removeEventListener('visibilitychange', onVisibility);
-      };
-    }
 
     return () => {
       window.removeEventListener('resize', handleResize);
@@ -274,12 +228,8 @@ function App() {
 
       <audio
         ref={audioRef}
-        src="/sarki.mp3"
-        autoPlay
         loop
         playsInline
-        muted
-        defaultMuted
         preload="auto"
         className="hidden"
       />
