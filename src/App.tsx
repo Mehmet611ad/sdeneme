@@ -163,21 +163,10 @@ function App() {
     if (audio) {
       audio.loop = true;
       audio.volume = 0.3;
-      audio.muted = false; // try with sound first
-
-      const tryPlayWithSound = async () => {
-        try {
-          await audio.play();
-          setIsMuted(false);
-        } catch {
-          // Fallback: start muted autoplay
-          audio.muted = true;
-          audio.play().catch(() => {});
-          setIsMuted(true);
-        }
-      };
-
-      tryPlayWithSound();
+      audio.muted = true; // guarantee muted autoplay
+      // Start autoplay muted immediately
+      audio.play().catch(() => {});
+      setIsMuted(true);
 
       // Unmute on ANY interaction (not sadece üstteki buton):
       const attemptUnmute = () => {
@@ -286,6 +275,8 @@ function App() {
         autoPlay
         loop
         playsInline
+        muted
+        defaultMuted
         preload="auto"
         className="hidden"
       />
