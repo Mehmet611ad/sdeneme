@@ -163,31 +163,55 @@ function App() {
     if (audio) {
       audio.loop = true;
       audio.volume = 0.3;
-      audio.muted = true; // allow autoplay on mobile
-      // Attempt autoplay (muted)
-      audio.play().catch(() => {
-        // If even muted autoplay is blocked, wait for first interaction
-        const handleUserInteraction = () => {
-          audio.muted = false;
-          audio.play().then(() => setIsMuted(false)).catch(() => {});
-          document.removeEventListener('click', handleUserInteraction);
-          document.removeEventListener('touchstart', handleUserInteraction);
-        };
-        document.addEventListener('click', handleUserInteraction, { once: true });
-        document.addEventListener('touchstart', handleUserInteraction, { once: true });
-      });
+      audio.muted = false; // try with sound first
 
-      // After first gesture anywhere, unmute if still muted
-      const unmuteOnFirstInteraction = () => {
+      const tryPlayWithSound = async () => {
+        try {
+          await audio.play();
+          setIsMuted(false);
+        } catch {
+          // Fallback: start muted autoplay
+          audio.muted = true;
+          audio.play().catch(() => {});
+          setIsMuted(true);
+        }
+      };
+
+      tryPlayWithSound();
+
+      // Unmute on ANY interaction (not sadece üstteki buton):
+      const attemptUnmute = () => {
         if (audio.muted) {
           audio.muted = false;
           audio.play().then(() => setIsMuted(false)).catch(() => {});
         }
-        document.removeEventListener('click', unmuteOnFirstInteraction);
-        document.removeEventListener('touchstart', unmuteOnFirstInteraction);
+        removeInteractionListeners();
       };
-      document.addEventListener('click', unmuteOnFirstInteraction, { once: true });
-      document.addEventListener('touchstart', unmuteOnFirstInteraction, { once: true });
+
+      const removeInteractionListeners = () => {
+        document.removeEventListener('click', attemptUnmute);
+        document.removeEventListener('touchstart', attemptUnmute);
+        document.removeEventListener('pointerdown', attemptUnmute);
+        document.removeEventListener('keydown', attemptUnmute);
+        document.removeEventListener('scroll', attemptUnmute);
+        document.removeEventListener('mousemove', attemptUnmute);
+        window.removeEventListener('focus', attemptUnmute);
+        document.removeEventListener('visibilitychange', attemptUnmute);
+      };
+
+      document.addEventListener('click', attemptUnmute, { once: true });
+      document.addEventListener('touchstart', attemptUnmute, { once: true });
+      document.addEventListener('pointerdown', attemptUnmute, { once: true });
+      document.addEventListener('keydown', attemptUnmute, { once: true });
+      document.addEventListener('scroll', attemptUnmute, { once: true });
+      document.addEventListener('mousemove', attemptUnmute, { once: true });
+      window.addEventListener('focus', attemptUnmute, { once: true });
+      document.addEventListener('visibilitychange', attemptUnmute, { once: true });
+
+      // Cleanup interaction listeners on unmount
+      return () => {
+        removeInteractionListeners();
+      };
     }
 
     return () => {
