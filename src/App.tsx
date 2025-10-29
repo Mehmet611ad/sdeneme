@@ -16,7 +16,7 @@ interface Heart {
 function App() {
   const [answered, setAnswered] = useState<'yes' | 'no' | null>(null);
   const [showMessage, setShowMessage] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);  // Start with sound on
+  const [isMuted, setIsMuted] = useState(true);  // Start muted to allow autoplay on mobile
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const heartsRef = useRef<Heart[]>([]);
@@ -159,60 +159,67 @@ function App() {
 
     window.addEventListener('resize', handleResize);
 
-    audioRef.current = new Audio('/sarki.mp3');
-    audioRef.current.loop = true;
-    audioRef.current.volume = 0.3;
-    
-    // Start playing automatically when the page loads
-    const playAudio = async () => {
-      try {
-        await audioRef.current?.play();
-      } catch (error) {
-        console.log('Autoplay prevented, waiting for interaction');
+    const audio = audioRef.current;
+    if (audio) {
+      audio.loop = true;
+      audio.volume = 0.3;
+      audio.muted = true; // allow autoplay on mobile
+      // Attempt autoplay (muted)
+      audio.play().catch(() => {
+        // If even muted autoplay is blocked, wait for first interaction
         const handleUserInteraction = () => {
-          audioRef.current?.play()
-            .then(() => setIsMuted(false))
-            .catch(e => console.log('Playback failed:', e));
+          audio.muted = false;
+          audio.play().then(() => setIsMuted(false)).catch(() => {});
           document.removeEventListener('click', handleUserInteraction);
           document.removeEventListener('touchstart', handleUserInteraction);
         };
-        
         document.addEventListener('click', handleUserInteraction, { once: true });
         document.addEventListener('touchstart', handleUserInteraction, { once: true });
-      }
-    };
-    
-    playAudio();
+      });
+
+      // After first gesture anywhere, unmute if still muted
+      const unmuteOnFirstInteraction = () => {
+        if (audio.muted) {
+          audio.muted = false;
+          audio.play().then(() => setIsMuted(false)).catch(() => {});
+        }
+        document.removeEventListener('click', unmuteOnFirstInteraction);
+        document.removeEventListener('touchstart', unmuteOnFirstInteraction);
+      };
+      document.addEventListener('click', unmuteOnFirstInteraction, { once: true });
+      document.addEventListener('touchstart', unmuteOnFirstInteraction, { once: true });
+    }
 
     return () => {
       window.removeEventListener('resize', handleResize);
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
+      const audioEl = audioRef.current;
+      if (audioEl) {
+        audioEl.pause();
       }
     };
   }, []);
 
   const toggleMute = () => {
-    if (!audioRef.current) return;
-
+    const audio = audioRef.current;
+    if (!audio) return;
     if (isMuted) {
-      audioRef.current.play().catch(() => {});
+      audio.muted = false;
+      audio.play().catch(() => {});
       setIsMuted(false);
     } else {
-      audioRef.current.pause();
+      audio.muted = true;
       setIsMuted(true);
     }
   };
 
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches && window.innerWidth >= 768
   );
 
   // Respect only user's prefers-reduced-motion setting; do NOT disable animations just for mobile
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const handleChange = () => setPrefersReducedMotion(mediaQuery.matches);
+    const handleChange = () => setPrefersReducedMotion(mediaQuery.matches && window.innerWidth >= 768);
     mediaQuery.addEventListener?.('change', handleChange);
     // Fallback for older browsers
     mediaQuery.addListener?.(handleChange);
@@ -223,7 +230,7 @@ function App() {
   }, []);
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-gradient-to-br from-[#1a1a2e] via-[#2d3748] to-[#1a1a2e]">
+    <div className={`relative w-full h-screen overflow-hidden bg-gradient-to-br from-[#1a1a2e] via-[#2d3748] to-[#1a1a2e] ${prefersReducedMotion ? 'reduce-motion' : ''}`}>
       <canvas
         ref={canvasRef}
         className="absolute inset-0 w-full h-full"
@@ -248,6 +255,16 @@ function App() {
       >
         {isMuted ? <VolumeX className="w-4 h-4 md:w-5 md:h-5 text-white" /> : <Volume2 className="w-4 h-4 md:w-5 md:h-5 text-white" />}
       </button>
+
+      <audio
+        ref={audioRef}
+        src="/sarki.mp3"
+        autoPlay
+        loop
+        playsInline
+        preload="auto"
+        className="hidden"
+      />
 
       <div className="relative z-10 flex items-center justify-center min-h-screen px-4">
         <div
@@ -406,12 +423,10 @@ function App() {
           }
         }
 
-        @media (prefers-reduced-motion: reduce) {
-          * {
-            animation-duration: 0.01ms !important;
-            animation-iteration-count: 1 !important;
-            transition-duration: 0.01ms !important;
-          }
+        .reduce-motion * {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
         }
       `}</style>
     </div>
