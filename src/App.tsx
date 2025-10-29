@@ -16,7 +16,7 @@ interface Heart {
 function App() {
   const [answered, setAnswered] = useState<'yes' | 'no' | null>(null);
   const [showMessage, setShowMessage] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);  // Start with muted to allow autoplay
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const heartsRef = useRef<Heart[]>([]);
@@ -163,16 +163,21 @@ function App() {
     audioRef.current.loop = true;
     audioRef.current.volume = 0.3;
     
-    // Start playing automatically but muted by default
-    audioRef.current.muted = true;
-    const playPromise = audioRef.current.play();
-    
-    if (playPromise !== undefined) {
-      playPromise.catch(() => {
-        // Autoplay was prevented, keep it muted
-        setIsMuted(true);
-      });
-    }
+    // Start playing automatically when the page loads
+    const playPromise = audioRef.current.play().catch(error => {
+      console.log('Autoplay prevented:', error);
+      // If autoplay is prevented, try again with a user interaction
+      const handleUserInteraction = () => {
+        audioRef.current?.play().then(() => {
+          setIsMuted(false);
+          document.removeEventListener('click', handleUserInteraction);
+          document.removeEventListener('touchstart', handleUserInteraction);
+        });
+      };
+      
+      document.addEventListener('click', handleUserInteraction, { once: true });
+      document.addEventListener('touchstart', handleUserInteraction, { once: true });
+    });
 
     return () => {
       window.removeEventListener('resize', handleResize);
