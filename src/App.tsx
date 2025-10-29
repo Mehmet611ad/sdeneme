@@ -168,6 +168,25 @@ function App() {
       audio.play().catch(() => {});
       setIsMuted(true);
 
+      // Keep trying to start playback until it actually starts (some browsers delay policies)
+      let ensurePlayingInterval: number | undefined;
+      const tryEnsurePlaying = () => {
+        if (audio.paused) {
+          audio.play().catch(() => {});
+        } else if (ensurePlayingInterval) {
+          window.clearInterval(ensurePlayingInterval);
+          ensurePlayingInterval = undefined;
+        }
+      };
+      ensurePlayingInterval = window.setInterval(tryEnsurePlaying, 1500);
+
+      const onVisibility = () => {
+        if (document.visibilityState === 'visible' && audio.paused) {
+          audio.play().catch(() => {});
+        }
+      };
+      document.addEventListener('visibilitychange', onVisibility);
+
       // Unmute on ANY interaction (not sadece üstteki buton):
       const attemptUnmute = () => {
         if (audio.muted) {
@@ -200,6 +219,8 @@ function App() {
       // Cleanup interaction listeners on unmount
       return () => {
         removeInteractionListeners();
+        if (ensurePlayingInterval) window.clearInterval(ensurePlayingInterval);
+        document.removeEventListener('visibilitychange', onVisibility);
       };
     }
 
