@@ -25,7 +25,7 @@ function App() {
   const nextIdRef = useRef(0);
 
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const heartCount = isMobile ? 30 : 50;
+  const heartCount = isMobile ? 15 : 30;  // Reduced number of hearts on mobile
 
 
   useEffect(() => {
@@ -49,12 +49,12 @@ function App() {
         id: nextIdRef.current++,
         x: Math.random() * canvas.width,
         y: canvas.height + 50,
-        size: mobile ? Math.random() * 15 + 8 : Math.random() * 20 + 10,
-        speed: mobile ? Math.random() * 0.8 + 0.4 : Math.random() * 1 + 0.5,
-        opacity: Math.random() * 0.4 + 0.3,
+        size: mobile ? Math.random() * 12 + 6 : Math.random() * 20 + 10,  // Smaller hearts on mobile
+        speed: mobile ? Math.random() * 0.6 + 0.3 : Math.random() * 1 + 0.5,  // Slower speed on mobile
+        opacity: mobile ? Math.random() * 0.3 + 0.2 : Math.random() * 0.4 + 0.3,  // Less opacity on mobile
         rotation: Math.random() * 360,
-        rotationSpeed: (Math.random() - 0.5) * 1.5,
-        glowIntensity: mobile ? Math.random() * 0.3 + 0.2 : Math.random() * 0.5 + 0.3,
+        rotationSpeed: mobile ? (Math.random() - 0.5) * 1 : (Math.random() - 0.5) * 1.5,  // Slower rotation on mobile
+        glowIntensity: mobile ? 0 : Math.random() * 0.3 + 0.2,  // No glow on mobile
       };
     };
 
