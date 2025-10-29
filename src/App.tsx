@@ -205,15 +205,22 @@ function App() {
     }
   };
 
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
-  const isMobileDevice = /Mobi|Android/i.test(navigator.userAgent);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
 
-  // Set reduced motion for mobile devices
+  // Respect only user's prefers-reduced-motion setting; do NOT disable animations just for mobile
   useEffect(() => {
-    setPrefersReducedMotion(
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches || isMobileDevice
-    );
-  }, [isMobileDevice]);
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const handleChange = () => setPrefersReducedMotion(mediaQuery.matches);
+    mediaQuery.addEventListener?.('change', handleChange);
+    // Fallback for older browsers
+    mediaQuery.addListener?.(handleChange);
+    return () => {
+      mediaQuery.removeEventListener?.('change', handleChange);
+      mediaQuery.removeListener?.(handleChange);
+    };
+  }, []);
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-gradient-to-br from-[#1a1a2e] via-[#2d3748] to-[#1a1a2e]">
