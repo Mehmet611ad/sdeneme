@@ -24,8 +24,8 @@ function App() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const nextIdRef = useRef(0);
 
-  const isMobile = window.innerWidth < 768;
-  const heartCount = isMobile ? 25 : 50;
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const heartCount = isMobile ? 30 : 50;
 
 
   useEffect(() => {
@@ -43,17 +43,20 @@ function App() {
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
-    const createHeart = (): Heart => ({
-      id: nextIdRef.current++,
-      x: Math.random() * canvas.width,
-      y: canvas.height + 50,
-      size: Math.random() * 20 + 10,
-      speed: Math.random() * 1 + 0.5,
-      opacity: Math.random() * 0.4 + 0.3,
-      rotation: Math.random() * 360,
-      rotationSpeed: (Math.random() - 0.5) * 2,
-      glowIntensity: Math.random() * 0.5 + 0.3,
-    });
+    const createHeart = (): Heart => {
+      const mobile = canvas.width < 768;
+      return {
+        id: nextIdRef.current++,
+        x: Math.random() * canvas.width,
+        y: canvas.height + 50,
+        size: mobile ? Math.random() * 15 + 8 : Math.random() * 20 + 10,
+        speed: mobile ? Math.random() * 0.8 + 0.4 : Math.random() * 1 + 0.5,
+        opacity: Math.random() * 0.4 + 0.3,
+        rotation: Math.random() * 360,
+        rotationSpeed: (Math.random() - 0.5) * 1.5,
+        glowIntensity: mobile ? Math.random() * 0.3 + 0.2 : Math.random() * 0.5 + 0.3,
+      };
+    };
 
     for (let i = 0; i < heartCount; i++) {
       const heart = createHeart();
@@ -67,8 +70,8 @@ function App() {
       ctx.translate(heart.x, heart.y);
       ctx.rotate((heart.rotation * Math.PI) / 180);
 
-      if (heart.glowIntensity > 0.4) {
-        ctx.shadowBlur = 20;
+      if (heart.glowIntensity > 0.35) {
+        ctx.shadowBlur = canvas.width < 768 ? 10 : 20;
         ctx.shadowColor = `rgba(255, 150, 150, ${heart.opacity * heart.glowIntensity})`;
       }
 
@@ -150,6 +153,12 @@ function App() {
   };
 
   useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+
     audioRef.current = new Audio('/sarki.mp3');
     audioRef.current.loop = true;
     audioRef.current.volume = 0.3;
@@ -159,6 +168,7 @@ function App() {
     });
 
     return () => {
+      window.removeEventListener('resize', handleResize);
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
@@ -201,10 +211,10 @@ function App() {
 
       <button
         onClick={toggleMute}
-        className="absolute top-6 right-6 z-50 p-3 rounded-full bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all duration-300 hover:scale-110"
+        className="absolute top-4 right-4 md:top-6 md:right-6 z-50 p-2 md:p-3 rounded-full bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all duration-300 hover:scale-110 active:scale-95"
         aria-label={isMuted ? 'Unmute' : 'Mute'}
       >
-        {isMuted ? <VolumeX className="w-5 h-5 text-white" /> : <Volume2 className="w-5 h-5 text-white" />}
+        {isMuted ? <VolumeX className="w-4 h-4 md:w-5 md:h-5 text-white" /> : <Volume2 className="w-4 h-4 md:w-5 md:h-5 text-white" />}
       </button>
 
       <div className="relative z-10 flex items-center justify-center min-h-screen px-4">
@@ -224,7 +234,7 @@ function App() {
           {!answered && (
             <>
               <h1
-                className="text-5xl md:text-7xl lg:text-8xl mb-12 md:mb-16 text-white drop-shadow-2xl"
+                className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl mb-10 md:mb-12 lg:mb-16 text-white drop-shadow-2xl px-4"
                 style={{
                   fontFamily: "'Cormorant Garamond', serif",
                   fontStyle: 'italic',
@@ -237,10 +247,10 @@ function App() {
                 Beni seviyor musun?
               </h1>
 
-              <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+              <div className="flex flex-col sm:flex-row gap-4 md:gap-6 justify-center items-center px-4">
                 <button
                   onClick={() => handleAnswer('yes')}
-                  className="group relative px-12 py-5 text-2xl md:text-3xl font-medium text-white bg-gradient-to-r from-pink-500 to-rose-500 rounded-full shadow-2xl hover:shadow-pink-500/50 transition-all duration-500 hover:scale-110 hover:from-pink-400 hover:to-rose-400"
+                  className="group relative w-full sm:w-auto px-10 sm:px-12 py-4 sm:py-5 text-xl sm:text-2xl md:text-3xl font-medium text-white bg-gradient-to-r from-pink-500 to-rose-500 rounded-full shadow-2xl hover:shadow-pink-500/50 transition-all duration-500 hover:scale-110 active:scale-95 hover:from-pink-400 hover:to-rose-400"
                   style={{
                     fontFamily: "'Montserrat', sans-serif",
                     animation: prefersReducedMotion ? 'none' : 'gentleFadeIn 1.5s cubic-bezier(0.4, 0, 0.2, 1) 0.5s both',
@@ -252,7 +262,7 @@ function App() {
 
                 <button
                   onClick={() => handleAnswer('no')}
-                  className="group relative px-12 py-5 text-2xl md:text-3xl font-medium text-white bg-gradient-to-r from-slate-600 to-slate-700 rounded-full shadow-2xl hover:shadow-slate-500/50 transition-all duration-500 hover:scale-110 hover:from-slate-500 hover:to-slate-600"
+                  className="group relative w-full sm:w-auto px-10 sm:px-12 py-4 sm:py-5 text-xl sm:text-2xl md:text-3xl font-medium text-white bg-gradient-to-r from-slate-600 to-slate-700 rounded-full shadow-2xl hover:shadow-slate-500/50 transition-all duration-500 hover:scale-110 active:scale-95 hover:from-slate-500 hover:to-slate-600"
                   style={{
                     fontFamily: "'Montserrat', sans-serif",
                     animation: prefersReducedMotion ? 'none' : 'gentleFadeIn 1.5s cubic-bezier(0.4, 0, 0.2, 1) 0.7s both',
@@ -276,7 +286,7 @@ function App() {
         >
           <div className="text-center px-4 max-w-3xl">
             <h2
-              className="text-4xl md:text-6xl lg:text-7xl text-white mb-8 drop-shadow-2xl"
+              className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl text-white mb-2 md:mb-3 drop-shadow-2xl"
               style={{
                 fontFamily: "'Cormorant Garamond', serif",
                 fontStyle: 'italic',
@@ -286,13 +296,25 @@ function App() {
                 animation: showMessage && !prefersReducedMotion ? 'gentleFadeIn 2.5s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both' : 'none',
               }}
             >
-              {answered === 'yes' ? 'Ben de seni çok seviyorum.' : 'Oysa ben seni çok seviyordum.'}
+              {answered === 'yes' ? 'Ben de seni çok seviyorum' : 'Oysa ben seni çok seviyordum'}
             </h2>
+            {answered === 'yes' && (
+              <p 
+                className="text-white/70 text-lg md:text-xl mb-6 md:mb-8 italic"
+                style={{
+                  fontFamily: "'Cormorant Garamond', serif",
+                  textShadow: '0 2px 10px rgba(0, 0, 0, 0.5)',
+                  animation: showMessage && !prefersReducedMotion ? 'gentleFadeIn 2.5s cubic-bezier(0.4, 0, 0.2, 1) 0.5s both' : 'none',
+                }}
+              >
+                aşkımız sonsuz sürsün...
+              </p>
+            )}
 
-            <div className="flex gap-4 justify-center mt-12">
+            <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center mt-8 md:mt-12">
               <button
                 onClick={handleRetry}
-                className="px-8 py-3 text-lg font-medium text-white bg-white/10 backdrop-blur-sm rounded-full hover:bg-white/20 transition-all duration-300 hover:scale-105"
+                className="w-full sm:w-auto px-6 md:px-8 py-2.5 md:py-3 text-base md:text-lg font-medium text-white bg-white/10 backdrop-blur-sm rounded-full hover:bg-white/20 transition-all duration-300 hover:scale-105 active:scale-95"
                 style={{
                   fontFamily: "'Montserrat', sans-serif",
                   animation: showMessage && !prefersReducedMotion ? 'gentleFadeIn 1.8s cubic-bezier(0.4, 0, 0.2, 1) 2s both' : 'none'
@@ -302,7 +324,7 @@ function App() {
               </button>
               <button
                 onClick={handleShare}
-                className="px-8 py-3 text-lg font-medium text-white bg-white/10 backdrop-blur-sm rounded-full hover:bg-white/20 transition-all duration-300 hover:scale-105"
+                className="w-full sm:w-auto px-6 md:px-8 py-2.5 md:py-3 text-base md:text-lg font-medium text-white bg-white/10 backdrop-blur-sm rounded-full hover:bg-white/20 transition-all duration-300 hover:scale-105 active:scale-95"
                 style={{
                   fontFamily: "'Montserrat', sans-serif",
                   animation: showMessage && !prefersReducedMotion ? 'gentleFadeIn 1.8s cubic-bezier(0.4, 0, 0.2, 1) 2.2s both' : 'none'
