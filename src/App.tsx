@@ -162,10 +162,17 @@ function App() {
     audioRef.current = new Audio('/sarki.mp3');
     audioRef.current.loop = true;
     audioRef.current.volume = 0.3;
-
-    audioRef.current.play().catch(() => {
-      setIsMuted(true);
-    });
+    
+    // Start playing automatically but muted by default
+    audioRef.current.muted = true;
+    const playPromise = audioRef.current.play();
+    
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {
+        // Autoplay was prevented, keep it muted
+        setIsMuted(true);
+      });
+    }
 
     return () => {
       window.removeEventListener('resize', handleResize);
@@ -296,7 +303,10 @@ function App() {
                 animation: showMessage && !prefersReducedMotion ? 'gentleFadeIn 2.5s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both' : 'none',
               }}
             >
-              {answered === 'yes' ? 'Ben de seni çok seviyorum' : 'Oysa ben seni çok seviyordum 😢'}
+              <span className="relative">
+                {answered === 'yes' ? 'Ben de seni çok seviyorum' : 'Oysa ben seni çok seviyordum'}
+                {answered !== 'yes' && <span className="ml-2 align-middle">😢</span>}
+              </span>
             </h2>
             {answered === 'yes' && (
               <p 
