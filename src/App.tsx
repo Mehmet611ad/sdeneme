@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { Volume2, VolumeX } from 'lucide-react';
 
 interface Heart {
   id: number;
@@ -233,18 +232,7 @@ function App() {
     };
   }, []);
 
-  const toggleMute = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    if (isMuted) {
-      audio.muted = false;
-      audio.play().catch(() => {});
-      setIsMuted(false);
-    } else {
-      audio.muted = true;
-      setIsMuted(true);
-    }
-  };
+  // Removed user mute toggle: music plays automatically and cannot be toggled via UI
 
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(
     window.matchMedia('(prefers-reduced-motion: reduce)').matches && window.innerWidth >= 768
@@ -282,13 +270,7 @@ function App() {
 
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_0%,_rgba(0,0,0,0.6)_100%)]" />
 
-      <button
-        onClick={toggleMute}
-        className="absolute top-4 right-4 md:top-6 md:right-6 z-50 p-2 md:p-3 rounded-full bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all duration-300 hover:scale-110 active:scale-95"
-        aria-label={isMuted ? 'Unmute' : 'Mute'}
-      >
-        {isMuted ? <VolumeX className="w-4 h-4 md:w-5 md:h-5 text-white" /> : <Volume2 className="w-4 h-4 md:w-5 md:h-5 text-white" />}
-      </button>
+      {/* Removed mute/unmute button */}
 
       <audio
         ref={audioRef}
